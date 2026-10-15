@@ -165,6 +165,20 @@ main{max-width:var(--w);margin:0 auto;padding:6px 18px 8px}
 .ot-stamps span{font-size:11.5px;color:var(--dim);line-height:1.4}
 .ot-stamps a[aria-current] span{color:var(--accLt)}
 
+/* ── 결로 묶은 길잡이 = 번호 카드 ─────────────────── */
+.ot-themes{display:grid;gap:12px}
+@media (min-width:640px){.ot-themes{grid-template-columns:1fr 1fr}}
+@media (min-width:1000px){.ot-themes{grid-template-columns:repeat(3,1fr)}}
+.ot-themes section{border:1px solid var(--line);border-top:3px solid var(--acc);background:var(--card);padding:10px 12px 8px}
+.ot-themes h3{margin:0 0 6px;font-family:var(--serif);font-size:14.5px;font-weight:700;line-height:1.4}
+.ot-themes ol{list-style:none;margin:0;padding:0;counter-reset:th}
+.ot-themes li{counter-increment:th;border-top:1px dotted var(--line)}
+.ot-themes a{display:grid;grid-template-columns:22px 1fr auto;gap:0 6px;align-items:baseline;padding:6px 0;color:var(--ink);text-decoration:none}
+.ot-themes a::before{content:counter(th);font-family:var(--mono);font-size:11.5px;color:var(--acc)}
+.ot-themes a:hover b{text-decoration:underline}
+.ot-themes b{font-size:14px;font-weight:600}
+.ot-themes span{font-size:11.5px;color:var(--dim);font-family:var(--mono);white-space:nowrap}
+
 /* ── 값 장부 표 ──────────────────────────────────── */
 .ot-ledger{width:100%;border-collapse:collapse;font-size:14px}
 .ot-ledger caption{text-align:left;font-size:12px;color:var(--dim);padding-bottom:6px}

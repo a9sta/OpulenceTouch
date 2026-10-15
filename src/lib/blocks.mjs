@@ -123,6 +123,55 @@ export function topicLinks(groups, seedKey, num, heading, sub) {
     sub || esc(at(h, SEC.ltSub, 6)), num);
 }
 
+/* ── 결로 묶은 길잡이 ─────────────────────────────────────────
+   같은 방향으로 파인 곳, 같은 모양의 곳을 깊이 순으로 모아 건네준다.
+   ★후보 윗부분에서 시드로 다시 뽑아, 쪽마다 걸리는 곳이 달라지게 한다. */
+export function spotPool(regions, { sidoLabel = false, skipGu = '' } = {}) {
+  const out = [];
+  for (const r of regions) if (r.main) for (const g of r.gu) {
+    if (skipGu && `${r.slug}/${g.slug}` === skipGu) continue;
+    for (const s of g.spots) out.push({ href: `/${r.slug}/${g.slug}/${s.slug}/`, label: `${sidoLabel ? `${r.name} ` : ''}${g.name} ${s.name}`, u: s });
+  }
+  return out;
+}
+export function guPool(regions, { sidoLabel = false, skip = '' } = {}) {
+  const out = [];
+  for (const r of regions) for (const g of r.gu) {
+    if (skip && `${r.slug}/${g.slug}` === skip) continue;
+    out.push({ href: `/${r.slug}/${g.slug}/`, label: `${sidoLabel ? `${r.name} ` : ''}${g.name}`, u: g });
+  }
+  return out;
+}
+function themeDefs(noun) {
+  const defs = [];
+  for (let d = 0; d < 8; d++) {
+    const w = dirName(d);
+    defs.push({ k: `d${d}`, t: `${w}${josa(w, '으로/로')} 파인 ${noun}`, f: (u) => u.pockets > 0 && u.dir === d, sort: (a, b) => b.depth - a.depth, m: (u) => `홈 ${fm(u.depth)}` });
+  }
+  for (const sh of SHAPE_ORDER) {
+    defs.push({ k: `s${sh}`, t: `${shapeName(sh)} 땅의 ${noun}`, f: (u) => u.shape === sh, sort: (a, b) => b.depth - a.depth || b.fill - a.fill, m: (u) => `땅 ${u.fill}%` });
+  }
+  defs.push({ k: 'plain', t: `홈이 하나도 없는 ${noun}`, f: (u) => u.pockets === 0, sort: (a, b) => b.fill - a.fill, m: (u) => `땅 ${u.fill}%` });
+  defs.push({ k: 'deep', t: `홈이 가장 깊은 ${noun}`, f: (u) => u.pockets > 0, sort: (a, b) => b.depth - a.depth, m: (u) => `홈 ${fm(u.depth)}` });
+  defs.push({ k: 'thin', t: `겉선 안 땅이 가장 적은 ${noun}`, f: () => true, sort: (a, b) => a.fill - b.fill, m: (u) => `땅 ${u.fill}%` });
+  return defs;
+}
+export function themeCards({ pool, noun, seedKey, num, heading, sub, cards = 4, per = 4, prefer = [] }) {
+  const defs = themeDefs(noun).map((d) => ({ ...d, c: pool.filter((x) => d.f(x.u)) })).filter((d) => d.c.length >= per);
+  if (!defs.length) return { html: '', list: [] };
+  const order = shuffle(defs, hash(seedKey, 'tc'));
+  const first = prefer.map((k) => order.find((d) => d.k === k)).filter(Boolean);
+  const chosen = [...first, ...order.filter((d) => !first.includes(d))].slice(0, cards);
+  const list = [];
+  const body = chosen.map((d) => {
+    const win = d.c.slice().sort((a, b) => d.sort(a.u, b.u) || a.label.localeCompare(b.label, 'ko')).slice(0, per * 3);
+    const pick = shuffle(win, hash(seedKey, 'tc', d.k)).slice(0, per).sort((a, b) => d.sort(a.u, b.u) || a.label.localeCompare(b.label, 'ko'));
+    for (const x of pick) list.push({ name: x.label, href: x.href });
+    return `<section><h3>${esc(d.t)}</h3><ol>${pick.map((x) => `<li><a href="${x.href}"><b>${esc(x.label)}</b><span>${esc(d.m(x.u))}</span></a></li>`).join('')}</ol></section>`;
+  }).join('\n');
+  return { html: frame('theme', 'by grain', heading, `<div class="ot-themes">${body}</div>`, sub, num), list };
+}
+
 /** 코스 묶음 — 시도별 코스 안내문으로 가는 롱테일. */
 export function courseTopic(sd, courses) {
   return courses.map((c) => ({ label: `${sd.name} ${c.ko}`, href: `/${sd.slug}/course/${c.slug}/` }));
@@ -196,7 +245,7 @@ export function guIndex(sd, seedKey, currentSlug, num, { pick = 0 } = {}) {
   const rows = list.map((g) => `<tr${g.slug === currentSlug ? ' aria-current="page"' : ''}><th scope="row"><a href="/${sd.slug}/${g.slug}/">${esc(g.name)}</a></th><td>${g.fill}%</td><td>${fm(g.depth)}</td><td>${esc(dirName(g.dir))}</td></tr>`).join('\n');
   const partial = list.length < sd.gu.length;
   return frame('guidx', 'districts', partial ? `${esc(sd.name)}에서 고른 시군구 ${list.length}곳` : `${esc(sd.name)}의 시군구 ${sd.gu.length}곳`,
-    `<table class="ot-ledger"><thead><tr><th>시군구</th><th>겉선 안 땅</th><th>가장 깊은 홈</th><th>향한 쪽</th></tr></thead><tbody>\n${rows}\n</tbody></table>${partial ? `\n<p class="ot-x">${esc(sd.name)}에 든 시군구는 모두 ${sd.gu.length}곳입니다. <a href="/${sd.slug}/">${esc(sd.name)} 쪽</a>에 전부 펼쳐 두었습니다.</p>` : ''}`,
+    `<table class="ot-ledger"><thead><tr><th>시군구</th><th>겉선 안 땅</th><th>가장 깊은 홈</th><th>향한 쪽</th></tr></thead><tbody>\n${rows}\n</tbody></table>${partial ? `\n<p class="ot-x">${esc(sd.name)} 전체 시군구 ${sd.gu.length}곳 중 일부만 보여 드립니다. <a href="/${sd.slug}/">${esc(sd.name)} 쪽</a>에 전부 펼쳐 두었습니다.</p>` : ''}`,
     esc(at(hash(seedKey, 'gi'), SEC.guIdxSub)), num);
 }
 

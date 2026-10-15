@@ -4,7 +4,7 @@ import { title, desc, clampDesc } from '../lib/seo.mjs';
 import * as S from '../lib/schema.mjs';
 import {
   courseRoll, stepCards, stepSet, statTiles, faqBlock, noticeBlock,
-  hailStrip, siteLinks, topicLinks, docTopics,
+  hailStrip, siteLinks, topicLinks, docTopics, themeCards, spotPool,
 } from '../lib/blocks.mjs';
 import { plate } from '../assets.mjs';
 import { SEC, ANCHOR, COURSE_ANCHOR, DOC_LINKS, shapeName, fm } from '../content/copy.mjs';
@@ -52,7 +52,7 @@ export function homePage(ctx) {
   const whyBlock = frame('why', 'method', '왜 땅의 겉선을 그려 두었나요',
     `<div class="ot-lead">
       <p>지역 도해에는 그 땅을 팽팽한 고무줄로 감쌌을 때 <strong>고무줄 안쪽 가운데 땅이 몇 퍼센트인지</strong>와, 땅이 아닌 칸이 가장 깊이 파고든 길이가 적혀 있습니다. 도해를 낸 ${counts.spot}구역에서 가장 깊은 홈은 ${esc(counts.deepName)}의 ${fm(counts.depthMax)}이고, 한가운데 값은 ${fm(counts.depthMid)}입니다. 겉선 안 땅 비율의 한가운데는 ${counts.fillMid}%입니다.</p>
-      <p>이 숫자를 적는 까닭은 하나입니다. 큰 홈이 파인 동네는 같은 건물 번지여도 큰길에서 돌아 들어가야 하는 경우가 많습니다. 그래서 <strong>번지와 층, 큰길에서 몇 걸음 들어가는지까지 여쭙습니다.</strong> 반대로 겉선에 땅이 꽉 찬 동네는 큰길 이름 하나만 알아도 닿습니다. 가장 둥근 구역은 ${esc(counts.roundName)}이고, 홈이 하나도 없는 구역은 ${counts.plainRound}곳입니다.</p>
+      <p>이 수를 따로 적어 둔 이유는 한 가지예요. 큰 홈이 파인 동네는 같은 건물 번지여도 큰길에서 돌아 들어가야 하는 경우가 많습니다. 그래서 <strong>번지와 층, 큰길에서 몇 걸음 들어가는지까지 여쭙습니다.</strong> 반대로 겉선에 땅이 꽉 찬 동네는 큰길 이름 하나만 알아도 닿습니다. 가장 둥근 구역은 ${esc(counts.roundName)}이고, 홈이 하나도 없는 구역은 ${counts.plainRound}곳입니다.</p>
       <p>전국 행정동 ${counts.featAll}곳의 경계를 읽어 같은 순서로 쟀기 때문에 다시 돌리면 같은 숫자가 나옵니다. 어떻게 쟀는지는 <a href="/magazine/how-we-drew-the-outline/">측정 메모</a>에 적어 두었습니다.</p>
     </div>`, null, '02');
 
@@ -77,7 +77,11 @@ export function homePage(ctx) {
     { label: '동 이름으로 바로', items: deep, pick: 18, anchor: ANCHOR },
     { label: '시군구로', items: guList, pick: 16, anchor: ANCHOR },
     { label: '먼저 읽을 것', items: DOC_LINKS },
-  ], seed, '08', esc(at(h, SEC.topicHead, 8)), esc(at(h, SEC.topicSub, 3)));
+  ], seed, '09', esc(at(h, SEC.topicHead, 8)), esc(at(h, SEC.topicSub, 3)));
+  const theme = themeCards({
+    pool: spotPool(regions, { sidoLabel: true }), noun: '동', seedKey: seed, num: '08',
+    heading: esc(at(h, SEC.themeHead, 4)), sub: esc(at(h, SEC.themeSub, 5)), cards: 6, per: 3,
+  });
 
   const body = [
     hero,
@@ -88,6 +92,7 @@ export function homePage(ctx) {
     postBlock,
     faqHtml,
     noticeBlock(seed, '07'),
+    theme.html,
     topics,
     hailStrip(cfg, '지금 계신 곳', seed),
   ].join('\n');
@@ -110,6 +115,7 @@ export function homePage(ctx) {
           areaServed: AREA, courses,
         }),
         S.itemList(`${siteUrl}/#sidolist`, '찾아가는 시도', regions.map((r) => ({ name: r.name, url: `${siteUrl}/${r.slug}/` }))),
+        S.itemList(`${siteUrl}/#themes`, '결이 같은 동 모음', theme.list.map((x) => ({ name: x.name, url: `${siteUrl}${x.href}` }))),
         S.faqPage(`${siteUrl}/`, qa),
         S.howTo(`${siteUrl}/`, '전화 한 통으로 부르는 다섯 걸음', steps, cfg),
       ],
